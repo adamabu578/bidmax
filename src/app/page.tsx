@@ -80,22 +80,22 @@ export default function HomePage() {
             <div className="text-center lg:text-left">
               <div className="inline-block mb-4">
                 <span className="px-4 py-1.5 bg-accent/20 text-accent border border-accent/30 rounded-full text-sm tracking-wide">
-                  PREMIUM AUCTION HOUSE
+                  LIVE BIDDING MARKETPLACE
                 </span>
               </div>
               <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold mb-6 tracking-tight">
-                Discover Exceptional
-                <span className="block text-accent mt-2">Luxury Items</span>
+                Bid, Win, and Own
+                <span className="block text-accent mt-2">Any Item You Desire</span>
               </h1>
               <p className="text-xl md:text-2xl mb-10 text-slate-300 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                Curated auctions for discerning collectors. Authentic products, transparent bidding, unparalleled service.
+                Your ultimate destination for competitive bidding. From everyday essentials to rare finds, place your bids on anything and secure the best deals today.
               </p>
               <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
                 <Button size="lg" className="px-8 py-6 text-lg bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20" asChild>
-                  <Link href="#featured-auctions">Explore Auctions</Link>
+                  <Link href="#featured-auctions">Start Bidding</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="px-8 py-6 text-lg bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white/50">
-                  Learn More
+                <Button size="lg" variant="outline" className="px-8 py-6 text-lg bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white/50" asChild>
+                  <Link href="/login">Join as User</Link>
                 </Button>
               </div>
             </div>
