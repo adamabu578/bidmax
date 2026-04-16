@@ -70,7 +70,7 @@ export default function HomePage() {
                 </span>
               </div>
               <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold mb-6 tracking-tight">
-                Bid, Win, and Own
+                Bid Win and Own
                 <span className="block text-accent mt-2">Any Item You Desire</span>
               </h1>
               <p className="text-xl md:text-2xl mb-10 text-slate-300 max-w-xl mx-auto lg:mx-0 leading-relaxed">
@@ -88,15 +88,15 @@ export default function HomePage() {
               </div>
             </div>
             <div className="mt-14 lg:mt-0 relative flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-[360px] transform lg:-rotate-2 hover:rotate-0 transition-all duration-500">
+              <div className="relative w-full max-w-[360px]">
                 <div className="absolute -inset-4 bg-gradient-to-tr from-accent/40 to-transparent rounded-3xl blur-2xl -z-10"></div>
                 {heroProduct && (
                   <div className="shadow-2xl rounded-xl ring-4 ring-white/10 dark-mode-override relative">
                     <div className="absolute -top-3 -left-3 z-30 flex items-center justify-center">
                       <span className="relative flex h-8 w-20">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-20"></span>
                         <span className="relative inline-flex rounded-full h-8 w-20 bg-emerald-500 text-white font-bold text-[10px] items-center justify-center tracking-[0.2em] shadow-lg border border-emerald-400 uppercase">
-                          <span className="size-1.5 rounded-full bg-white mr-1.5 animate-pulse"></span>
+                          <span className="size-1.5 rounded-full bg-white mr-1.5"></span>
                           LIVE
                         </span>
                       </span>
