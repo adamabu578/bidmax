@@ -1,8 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { createClient } from "../utils/supabase/client";
 
-export type UserRole = "buyer" | "seller";
+export type UserRole = "buyer" | "seller" | "admin";
 
 export interface User {
   id: string;
@@ -13,79 +14,137 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, role?: UserRole) => void;
-  register: (name: string, email: string, role: UserRole) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
+  logout: () => Promise<void>;
+  demoAdminLogin: () => void;
+  demoBuyerLogin: () => void;
+  demoSellerLogin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const supabase = createClient();
 
   useEffect(() => {
-    // Load from local storage on mount
-    const savedUser = localStorage.getItem("bidmax_user");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error("Failed to parse user", e);
+    // Check active sessions and sets the user
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Fetch user profile from DB to get name and role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profile) {
+          setUser({
+            id: session.user.id,
+            name: profile.name,
+            email: session.user.email || '',
+            role: profile.role,
+          });
+        }
       }
-    }
+    };
+    getSession();
+
+    // Listen for changes on auth state (sign in, sign out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile) {
+          setUser({
+            id: session.user.id,
+            name: profile.name,
+            email: session.user.email || '',
+            role: profile.role,
+          });
+        }
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = (email: string, role?: UserRole) => {
-    // Mock login that creates a user if they just put in an email 
-    // Usually you'd check a DB, but we'll simulate picking an existing user or creating a generic buyer for simplicity if they just login
-    const savedUsers = JSON.parse(localStorage.getItem("bidmax_users_db") || "[]");
-    const existing = savedUsers.find((u: User) => u.email === email);
-    
-    if (existing) {
-      if (role && existing.role !== role) {
-        existing.role = role;
-        localStorage.setItem("bidmax_users_db", JSON.stringify(savedUsers));
-      }
-      setUser(existing);
-      localStorage.setItem("bidmax_user", JSON.stringify(existing));
-    } else {
-      // Create a fallback mock user if no db found
-      const mockUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: email.split("@")[0],
-        email,
-        role: role || "buyer",
-      };
-      setUser(mockUser);
-      localStorage.setItem("bidmax_user", JSON.stringify(mockUser));
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      throw error;
     }
   };
 
-  const register = (name: string, email: string, role: UserRole) => {
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name,
+  const register = async (name: string, email: string, password: string, role: UserRole) => {
+    // Sign up user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
-      role,
-    };
-    
-    // Save to our mock DB
-    const savedUsers = JSON.parse(localStorage.getItem("bidmax_users_db") || "[]");
-    savedUsers.push(newUser);
-    localStorage.setItem("bidmax_users_db", JSON.stringify(savedUsers));
+      password,
+    });
+    if (authError) throw authError;
 
-    // Log them in immediately
-    setUser(newUser);
-    localStorage.setItem("bidmax_user", JSON.stringify(newUser));
+    // Create profile
+    if (authData.user) {
+      const { error: profileError } = await supabase.from('profiles').insert([
+        {
+          id: authData.user.id,
+          name,
+          role,
+        }
+      ]);
+      if (profileError) throw profileError;
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
     setUser(null);
-    localStorage.removeItem("bidmax_user");
+  };
+
+  const demoAdminLogin = () => {
+    setUser({
+      id: "demo-admin-id-mocked",
+      name: "Demo Admin",
+      email: "admin@demo.com",
+      role: "admin",
+    });
+  };
+
+  const demoBuyerLogin = () => {
+    setUser({
+      id: "demo-buyer-id-mocked",
+      name: "Demo Buyer",
+      email: "buyer@demo.com",
+      role: "buyer",
+    });
+  };
+
+  const demoSellerLogin = () => {
+    setUser({
+      id: "demo-seller-id-mocked",
+      name: "Demo Seller",
+      email: "seller@demo.com",
+      role: "seller",
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout, demoAdminLogin, demoBuyerLogin, demoSellerLogin }}>
       {children}
     </AuthContext.Provider>
   );

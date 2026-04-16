@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Gavel, Menu, User, Bell, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Search, Gavel, Menu, User, Bell, LogOut, LayoutDashboard, ChevronDown, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "./ui/button";
@@ -25,6 +25,11 @@ export function Header() {
         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
     }`;
   };
+
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+  if (isAuthPage) {
+    return null;
+  }
 
   return (
     <header className="border-b bg-white sticky top-0 z-50 shadow-sm">
@@ -97,6 +102,14 @@ export function Header() {
                     </Button>
                   </Link>
                 )}
+                {user.role === "admin" && (
+                  <Link href="/admin">
+                    <Button variant="outline" className="gap-2 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+                      <Shield className="size-4" />
+                      Admin Panel
+                    </Button>
+                  </Link>
+                )}
                 <div className="text-sm border-l pl-4 ml-2">
                   <p className="font-medium text-slate-900">{user.name}</p>
                   <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
@@ -163,6 +176,13 @@ export function Header() {
                         <Link href="/seller" className="w-full" onClick={() => setIsMobileOpen(false)}>
                           <Button className="w-full h-14 text-lg bg-slate-900 hover:bg-slate-800 text-white border-0 active:scale-95 transition-transform">
                             Dashboard
+                          </Button>
+                        </Link>
+                      )}
+                      {user.role === "admin" && (
+                        <Link href="/admin" className="w-full" onClick={() => setIsMobileOpen(false)}>
+                          <Button className="w-full h-14 text-lg bg-red-600 hover:bg-red-700 text-white border-0 active:scale-95 transition-transform">
+                            Admin Panel
                           </Button>
                         </Link>
                       )}

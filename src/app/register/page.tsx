@@ -14,24 +14,33 @@ import { clsx } from "clsx";
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("buyer");
   const { register } = useAuth();
   const router = useRouter();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !email.includes("@")) {
       toast.error("Invalid Details", { description: "Please enter a valid name and email address." });
       return;
     }
+    if (!password || password.length < 6) {
+      toast.error("Invalid Password", { description: "Password must be at least 6 characters long." });
+      return;
+    }
     
-    register(name, email, role);
-    toast.success("Account created successfully!", { description: `Welcome to BidMax, ${name}.` });
-    
-    if (role === "seller") {
-      router.push("/seller");
-    } else {
-      router.push("/");
+    try {
+      await register(name, email, password, role);
+      toast.success("Account created successfully!", { description: `Welcome to BidMax, ${name}.` });
+      
+      if (role === "seller") {
+        router.push("/seller");
+      } else {
+        router.push("/");
+      }
+    } catch (error: any) {
+      toast.error("Registration Failed", { description: error.message || "An error occurred during registration." });
     }
   };
 
@@ -102,6 +111,21 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12 border-slate-200"
                   required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-slate-700">
+                  Password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-12 border-slate-200"
+                  required
+                  minLength={6}
                 />
               </div>
             </div>

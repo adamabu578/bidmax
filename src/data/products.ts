@@ -52,6 +52,7 @@ export const products: Product[] = [
     condition: "Brand New",
     featured: true,
     bids: [
+      { id: "b-demo", amount: 460, bidder: "Demo Buyer", timestamp: new Date() },
       { id: "b1", amount: 450, bidder: "JohnD", timestamp: new Date(Date.now() - 30000) },
       { id: "b2", amount: 420, bidder: "SarahM", timestamp: new Date(Date.now() - 120000) },
       { id: "b3", amount: 380, bidder: "MikeR", timestamp: new Date(Date.now() - 300000) },

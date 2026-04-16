@@ -1,6 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
 import { 
   Smartphone, 
   Watch, 
@@ -37,40 +41,22 @@ export default function HomePage() {
   
   // If seller is logged in, prioritize showing their own product that has active bids in the hero
   const sellerActiveBids = user?.role === "seller" 
-    ? products.filter(p => p.sellerId === user.id && p.status !== 'sold' && p.bids.length > 0).sort((a,b) => b.bids.length - a.bids.length)
+    ? [...products].filter(p => p.sellerId === user.id && p.status !== 'sold' && p.bids.length > 0).sort((a,b) => b.bids.length - a.bids.length)
     : [];
+    
+  // Find the product globally that has the most recent bid (most active)
+  const mostActiveProduct = [...products]
+    .filter(p => p.status !== 'sold' && p.bids.length > 0)
+    .sort((a, b) => new Date(b.bids[0].timestamp).getTime() - new Date(a.bids[0].timestamp).getTime())[0];
     
   const heroProduct = sellerActiveBids.length > 0 
     ? sellerActiveBids[0] 
-    : featuredProducts.find(p => p.status !== 'sold') || products.find(p => p.status !== 'sold') || products[0];
+    : mostActiveProduct || featuredProducts.find(p => p.status !== 'sold') || products.find(p => p.status !== 'sold') || products[0];
 
   return (
     <div>
-      {/* Hero Section or Buyer View */}
-      {user?.role === 'buyer' ? (
-        <section className="bg-slate-50 border-b">
-          <div className="container mx-auto px-4 py-12 md:py-16">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 gap-4">
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-3 text-slate-800 tracking-tight">Live Auctions</h1>
-                <p className="text-lg text-slate-500">Browse all available items currently open for bidding</p>
-              </div>
-            </div>
-            {products.filter(p => p.status !== 'sold').length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                {products.filter(p => p.status !== 'sold').map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-2xl bg-white">
-                <p className="text-xl text-slate-500 font-medium">No active auctions available right now.</p>
-              </div>
-            )}
-          </div>
-        </section>
-      ) : (
-        <section className="bg-slate-900 text-white relative overflow-hidden">
+      {/* Hero Section - Always Visible */}
+      <section className="bg-slate-900 text-white relative overflow-hidden">
         {/* Abstract background blobs */}
         <div className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 rounded-full bg-accent/20 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl"></div>
@@ -94,12 +80,14 @@ export default function HomePage() {
                 <Button size="lg" className="px-8 py-6 text-lg bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20" asChild>
                   <Link href="#featured-auctions">Start Bidding</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="px-8 py-6 text-lg bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white/50" asChild>
-                  <Link href="/login">Join as User</Link>
-                </Button>
+                {!user && (
+                  <Button size="lg" variant="outline" className="px-8 py-6 text-lg bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white/50" asChild>
+                    <Link href="/login">Join as User</Link>
+                  </Button>
+                )}
               </div>
             </div>
-            <div className="mt-10 lg:mt-0 relative hidden md:flex justify-center lg:justify-end">
+            <div className="mt-14 lg:mt-0 relative flex justify-center lg:justify-end">
               <div className="relative w-full max-w-[360px] transform lg:-rotate-2 hover:rotate-0 transition-all duration-500">
                 <div className="absolute -inset-4 bg-gradient-to-tr from-accent/40 to-transparent rounded-3xl blur-2xl -z-10"></div>
                 {heroProduct && (
@@ -121,6 +109,100 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Buyer Specific View */}
+      {user?.role === 'buyer' && (
+        <section className="bg-slate-50 border-b">
+          <div className="container mx-auto px-4 py-12 md:py-16">
+            
+            {/* My Active Bids Section */}
+            {(() => {
+              const myBids = products.filter(p => p.bids.some(b => b.bidder === user.name) && p.status !== 'sold');
+              if (myBids.length > 0) {
+                return (
+                  <div className="mb-16">
+                    <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 gap-4">
+                      <div>
+                        <h2 className="text-3xl md:text-4xl font-bold mb-3 text-slate-800 tracking-tight flex items-center gap-3">
+                          <span className="relative flex h-4 w-4">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
+                          </span>
+                          Your Active Bids
+                        </h2>
+                        <p className="text-lg text-slate-500">Track the auctions you are currently participating in.</p>
+                      </div>
+                    </div>
+                    <Swiper
+                      modules={[Autoplay]}
+                      spaceBetween={24}
+                      slidesPerView={1}
+                      breakpoints={{
+                        768: { slidesPerView: 2 },
+                        1024: { slidesPerView: 3 },
+                        1280: { slidesPerView: 4 },
+                      }}
+                      className="pb-2 px-2"
+                    >
+                      {myBids.map(product => {
+                        const isWinning = product.bids[0].bidder === user.name;
+                        return (
+                          <SwiperSlide key={`my-bids-${product.id}`}>
+                            <div className="relative">
+                              <div className="absolute -top-3 -right-3 z-30">
+                                {isWinning ? (
+                                  <div className="bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border-2 border-emerald-300">
+                                    WINNING
+                                  </div>
+                                ) : (
+                                  <div className="bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border-2 border-amber-300">
+                                    OUTBID
+                                  </div>
+                                )}
+                              </div>
+                              <ProductCard product={product} />
+                            </div>
+                          </SwiperSlide>
+                        );
+                      })}
+                    </Swiper>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 gap-4 pt-4 border-t border-slate-200">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-3 text-slate-800 tracking-tight">Live Auctions</h2>
+                <p className="text-lg text-slate-500">Browse all available items currently open for bidding</p>
+              </div>
+            </div>
+            {products.filter(p => p.status !== 'sold').length > 0 ? (
+              <Swiper
+                modules={[Autoplay]}
+                spaceBetween={24}
+                slidesPerView={1}
+                breakpoints={{
+                  768: { slidesPerView: 2 },
+                  1024: { slidesPerView: 3 },
+                  1280: { slidesPerView: 4 },
+                }}
+                className="pb-6 px-2"
+              >
+                {products.filter(p => p.status !== 'sold').map(product => (
+                  <SwiperSlide key={product.id}>
+                    <ProductCard product={product} />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            ) : (
+              <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-2xl bg-white">
+                <p className="text-xl text-slate-500 font-medium">No active auctions available right now.</p>
+              </div>
+            )}
+          </div>
+        </section>
       )}
 
       {/* Categories Section */}
@@ -203,11 +285,24 @@ export default function HomePage() {
           </div>
           <Button variant="outline" className="hidden md:inline-flex border-2">View All Auctions</Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <Swiper
+          modules={[Autoplay]}
+          spaceBetween={24}
+          slidesPerView={1}
+          autoplay={{ delay: 5000, disableOnInteraction: false }}
+          breakpoints={{
+            768: { slidesPerView: 2 },
+            1024: { slidesPerView: 3 },
+            1280: { slidesPerView: 4 },
+          }}
+          className="pb-6 px-2"
+        >
           {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <SwiperSlide key={product.id}>
+              <ProductCard product={product} />
+            </SwiperSlide>
           ))}
-        </div>
+        </Swiper>
       </section>
 
       {/* Recent Auctions */}
@@ -218,11 +313,23 @@ export default function HomePage() {
             <p className="text-lg text-muted-foreground">Recently added to our collection</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <Swiper
+          modules={[Autoplay]}
+          spaceBetween={24}
+          slidesPerView={1}
+          breakpoints={{
+            768: { slidesPerView: 2 },
+            1024: { slidesPerView: 3 },
+            1280: { slidesPerView: 4 },
+          }}
+          className="pb-6 px-2"
+        >
           {recentProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <SwiperSlide key={product.id}>
+              <ProductCard product={product} />
+            </SwiperSlide>
           ))}
-        </div>
+        </Swiper>
       </section>
 
       {/* CTA Section */}
